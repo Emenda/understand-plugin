@@ -41,6 +41,9 @@
       <f:textbox/>
   </f:entry>
   
+  <f:entry title="Path to text file containing all source files" field="pathListFiles" help="/plugin/UnderstandJenkins/pathListFiles.html">
+      <f:textbox/>
+  </f:entry>  
   
   <f:entry title="Path to Configuration" field="pathCodeCheckIni" help="/plugin/UnderstandJenkins/pathIni.html">
       <f:textbox/>
@@ -55,7 +58,7 @@
           <f:checkbox name="ada" title="Ada " checked="${lang.ada}"/>
           <f:checkbox name="jovial" title="Jovial " checked="${lang.jovial}"/>
           <f:checkbox name="cobol" title="Cobol " checked="${lang.cobol}"/>
-          <f:checkbox name="vhdn" title="VHDN " checked="${lang.vhdn}"/>
+          <f:checkbox name="vhdl" title="VHDL " checked="${lang.vhdl}"/>
           <f:checkbox name="web" title="WEB " checked="${lang.web}"/>
           <f:checkbox name="python" title="Python " checked="${lang.python}"/>
           <f:checkbox name="pascal" title="Pascal " checked="${lang.pascal}"/>

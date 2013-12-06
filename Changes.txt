@@ -1,0 +1,9 @@
+v1.0
+- First release
+====
+v1.1
+- Correcting VHDN to VHDL in UnderstandBuilder/config.jelly
+- Fixed Understand path not kept and not used by the plugin. The und binary in the PATH is not mandatory anymore.
+- Fixed the metrics report not showed because of HTTP 404 error
+- Added the ability to analyze and to run a code check only on specific files indicated in a file list text.
+====

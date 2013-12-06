@@ -35,8 +35,6 @@ public class UnderstandReport implements Action{
 
     private String UrlName;
 
-    
-
     private final String displayName;
 
     private AbstractBuild<?, ?> owner;
@@ -51,7 +49,7 @@ public class UnderstandReport implements Action{
         {
             this.index+="codecheckReport/index.html";
         }
-        else if(type=="metrics")
+        else if(type=="Metrics")
             this.index+=dbName+"_"+type+"/index.html";
         else
            this.index+=dbName+"_html/index.html"; 

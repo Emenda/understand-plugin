@@ -28,8 +28,6 @@ import hudson.FilePath;
 import hudson.model.AbstractBuild;
 import hudson.util.ArgumentListBuilder;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * This entity allow to Build all the command using during an Understand analysis.
@@ -49,35 +47,35 @@ public class BuildCommand {
     }
     
     
-    public BuildCommand(boolean isUnix,AbstractBuild<?,?> owner) throws IOException, InterruptedException {
+    public BuildCommand(String undPath, boolean isUnix,AbstractBuild<?,?> owner) throws IOException, InterruptedException {
         this.args = new ArgumentListBuilder();
         this.isUnix=isUnix;        
         //A new directory is created to save the html reports of the analyze
         FilePath fp=new FilePath(owner.getWorkspace(),"build_"+owner.getId());
         fp.mkdirs();
         currentBuild=fp;
-        buildCommandInit();       
+        buildCommandInit(undPath);     
     }
     
     //Allow to build the generic command to run on Jenkins
-    private void buildCommandInit()
+    private void buildCommandInit(String undPath)
     {
         this.args.clear();
         if(!isUnix)
         {
-            this.args.add("cmd.exe","/C").add("und");
+            this.args.add("cmd.exe","/C").add(undPath);
         }
         else
         {
-            this.args.add("/bin/bash").add("und");
+            this.args.add("/bin/bash").add(undPath);
         }
         
     }
     
     //Allow to build the create command of Understand analysis.
-    public ArgumentListBuilder buildCreateCommand(String dbName,String languages,AbstractBuild<?, ?> owner)
+    public ArgumentListBuilder buildCreateCommand(String undPath, String dbName,String languages,AbstractBuild<?, ?> owner)
     {
-       buildCommandInit();
+       buildCommandInit(undPath);
       
       
                 this.args.add("create").add("-db").add(dbName+".udb")
@@ -95,9 +93,9 @@ public class BuildCommand {
     }
     
     //Allow to build the add command of Understand analysis
-    public ArgumentListBuilder buildAddCommand(String dbName,String pathSrcFiles)
+    public ArgumentListBuilder buildAddCommand(String undPath, String dbName,String pathSrcFiles)
     {
-        buildCommandInit();
+        buildCommandInit(undPath);
         this.args.add("add")
                  .add(pathSrcFiles + "/")
                  .add(dbName+".udb");
@@ -105,31 +103,40 @@ public class BuildCommand {
     }
     
     //Allow to build the analyze command of Understand analysis
-     public ArgumentListBuilder buildAnalyzeCommand(String dbName)
+     public ArgumentListBuilder buildAnalyzeCommand(String undPath, String dbName, String listFile)
     {
-        buildCommandInit();
-        this.args
-                 .add("analyze")
-                 .add(dbName+".udb");
+        buildCommandInit(undPath);
+        this.args.add("analyze");
+        if(listFile != null) {
+            this.args.add("-files").add("@"+listFile);
+        }
+     
+        this.args.add(dbName+".udb");
         return this.args;
     }
      
     //Allow to build the codecheck command of Understand analysis
-    public ArgumentListBuilder buildCodeCheckCommand(String dbName,String configPath)
+    public ArgumentListBuilder buildCodeCheckCommand(String undPath, String dbName,String configPath, String listFile)
     {
-        buildCommandInit();
+        buildCommandInit(undPath);
         
         this.args.add("codecheck")
-                 .add("-htmlsnippets").add(configPath)
+                 .add("-htmlsnippets");
+
+        if(listFile != null) {
+            this.args.add("-files").add(listFile);
+        }
+
+        this.args.add(configPath)
                  .add(currentBuild.getName()+"/codecheckReport")
                  .add(dbName+".udb");
         return this.args;
     }
     
     //Allow to build the report command of Understand analysis
-    public ArgumentListBuilder buildReportCommand(String dbName)
+    public ArgumentListBuilder buildReportCommand(String undPath, String dbName)
     {
-        buildCommandInit();
+        buildCommandInit(undPath);
         this.args
                 .add("report")
                 .add(dbName+".udb");
@@ -139,9 +146,9 @@ public class BuildCommand {
     
     //Allow to build the metrics command of Understand analysis
 
-    public ArgumentListBuilder buildMetricsCommand(String dbName)
+    public ArgumentListBuilder buildMetricsCommand(String undPath, String dbName)
     {
-        buildCommandInit();
+        buildCommandInit(undPath);
         this.args
                 .add("metrics")
                 .add("-html")

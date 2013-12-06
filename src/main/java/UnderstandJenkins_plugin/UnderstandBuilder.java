@@ -27,19 +27,15 @@ import UnderstandJenkins_plugin.utils.BuildCommand;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.Util;
 import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.Descriptor;
 import hudson.model.Result;
-import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
-import hudson.util.FormValidation;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
 
 /** 
  * Entity that allow to run an Understand analysis on a Jenkins build
@@ -61,11 +57,11 @@ public class UnderstandBuilder extends Builder {
     //The languages of the project to analyze
     private UnderstandLanguageContainer language;
     boolean forceCreation=false;
-
+    private String listFile;
    
     
     @DataBoundConstructor
-    public UnderstandBuilder(String dbName, String pathFiles, String pathCodeCheckIni, UnderstandLanguageContainer lang,boolean forceCreation, boolean codeCheck, boolean metrics, boolean report)
+    public UnderstandBuilder(String dbName, String pathFiles, String pathCodeCheckIni, UnderstandLanguageContainer lang,boolean forceCreation, boolean codeCheck, boolean metrics, boolean report, String pathListFiles)
     {
         this.dbName=dbName;
         this.pathFiles=pathFiles;
@@ -75,13 +71,12 @@ public class UnderstandBuilder extends Builder {
         this.report=report;
         this.language=lang;
         this.forceCreation=forceCreation;
-        
+        this.listFile=pathListFiles;
     }
     
     
     public UnderstandBuilder()
-    {        
-    }
+    { }
 
     public UnderstandLanguageContainer getLanguage() {
         return language;
@@ -115,39 +110,42 @@ public class UnderstandBuilder extends Builder {
         return pathCodeCheckIni;
     }
     
+    public String getPathListFiles() {
+        return listFile;
+    }
+    
     //This method run all the Understand Command for analyze a project.
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, IOException, InterruptedException {
-      BuildCommand buildCmd= new BuildCommand(launcher.isUnix(),build);
+      BuildCommand buildCmd= new BuildCommand(DESCRIPTOR.getUndPath(), launcher.isUnix(),build);
        
         try {
            
             int join;
             
             FilePath fp=new FilePath(build.getWorkspace(),dbName+".udb");
-            boolean state=fp.exists();
             if(!fp.exists()||forceCreation){  
             
-                join=launcher.launch().cmds(buildCmd.buildCreateCommand(this.dbName,this.language.getLanguages(),build)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
+                join=launcher.launch().cmds(buildCmd.buildCreateCommand(DESCRIPTOR.getUndPath(), this.dbName,this.language.getLanguages(),build)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
                 if(join==1) {
                     throw new Exception("Error at project creation.");
                 }
             }
             
-            join = launcher.launch().cmds(buildCmd.buildAddCommand(this.dbName, this.pathFiles)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
+            join = launcher.launch().cmds(buildCmd.buildAddCommand(DESCRIPTOR.getUndPath(), this.dbName, this.pathFiles)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
             if(join==1) {
                 throw new Exception("Error adding sources files");
             }
             
             
-            join=launcher.launch().cmds(buildCmd.buildAnalyzeCommand(this.dbName)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
+            join=launcher.launch().cmds(buildCmd.buildAnalyzeCommand(DESCRIPTOR.getUndPath(), this.dbName, this.listFile)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
             if(join==1) {
                 throw new Exception("Error in analyze.");
             }
             
             if(this.metrics)
             {    
-                join=launcher.launch().cmds(buildCmd.buildMetricsCommand(this.dbName)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
+                join=launcher.launch().cmds(buildCmd.buildMetricsCommand(DESCRIPTOR.getUndPath(), this.dbName)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
                 if(join==1) {
                     throw new Exception("Error creating Metrics reports.");
                 }
@@ -155,12 +153,12 @@ public class UnderstandBuilder extends Builder {
                 FilePath destination=new FilePath(build.getWorkspace(),"build_"+build.getId()+"/"+dbName+"_Metrics");
                 destination.mkdirs();
                 source.moveAllChildrenTo(destination);
-                build.addAction(new UnderstandReport(this.dbName,build,"metrics"));
+                build.addAction(new UnderstandReport(this.dbName,build,"Metrics"));
             }
             
             if(this.report)
             {
-                join=launcher.launch().cmds(buildCmd.buildReportCommand(this.dbName)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
+                join=launcher.launch().cmds(buildCmd.buildReportCommand(DESCRIPTOR.getUndPath(), this.dbName)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
                 if(join==1) {
                     throw new Exception("Error creating report.");
                 }
@@ -173,7 +171,7 @@ public class UnderstandBuilder extends Builder {
             
             if(this.codeCheck)
             {
-                join=launcher.launch().cmds(buildCmd.buildCodeCheckCommand(this.dbName, this.pathCodeCheckIni)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
+                join=launcher.launch().cmds(buildCmd.buildCodeCheckCommand(DESCRIPTOR.getUndPath(), this.dbName, this.pathCodeCheckIni, this.listFile)).envs(build.getEnvironment(listener)).stdout(listener).pwd(build.getWorkspace()).join();
                 if(join==1) {
                     throw new Exception("Error creating codeCheck reports.");
                 }
@@ -189,62 +187,14 @@ public class UnderstandBuilder extends Builder {
         }        
         return true;
     }
-
-
+    
     @Override
-    public UnderstandBuilder.UndDescriptor getDescriptor() {
+    public Descriptor<Builder> getDescriptor() {
         return DESCRIPTOR;
     }
-
     
-    @Extension    
-    public static final UnderstandBuilder.UndDescriptor DESCRIPTOR = new UnderstandBuilder.UndDescriptor();
-    public static final class UndDescriptor extends BuildStepDescriptor<Builder> {
-        
-        public UndDescriptor() {
-            super(UnderstandBuilder.class);
-            load();
-        }
-        
-        public boolean isApplicable(Class<? extends AbstractProject> aClass) {
-            // Indicates that this builder can be used with all kinds of project types 
-            return true;
-        }
-
-        
-        public String getDisplayName() {
-            return "Run an Understand Analysis";
-        }
-        
-        public UnderstandLanguageContainer getLanguage() {
-            return new UnderstandLanguageContainer();
-        }  
-        
-        public FormValidation doCheckDbName(@QueryParameter String value) {
-            String dbName = Util.fixEmptyAndTrim(value);
-            if (dbName == null || dbName.isEmpty()) {
-                return FormValidation.error("Database Name is mandatory");
-            } else {
-                return FormValidation.ok();
-            }
-        }
-        
-        public FormValidation doCheckPathFiles(@QueryParameter String value) {
-            String pathFiles = Util.fixEmptyAndTrim(value);
-            if (pathFiles == null || pathFiles.isEmpty()) {
-                return FormValidation.error("Path to source files is mandatory");
-            } else {
-                return FormValidation.ok();
-            }
-        }
-        public FormValidation doCheckPathCodeCheckIni(@QueryParameter String value) {
-            String pathCodeCheckIni = Util.fixEmptyAndTrim(value);
-            if (pathCodeCheckIni == null || pathCodeCheckIni.isEmpty()) {
-                return FormValidation.error("Path to codeCheck configuration file is mandatory");
-            } else {
-                return FormValidation.ok();
-            }
-        }       
-    }
+    @Extension
+    public static final UnderstandBuilderDescriptor DESCRIPTOR = new UnderstandBuilderDescriptor();
+    
 }
 
