@@ -1,0 +1,74 @@
+<!--
+/*******************************************************************************
+ * Copyright (c) 2011 Emenda France Sarl                                      *
+ * Author : Yoan Poigneau                                                       *
+ *		                                                                        *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy *
+ * of this software and associated documentation files (the "Software"), to deal*
+ * in the Software without restriction, including without limitation the rights *
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell    *
+ * copies of the Software, and to permit persons to whom the Software is        *
+ * furnished to do so, subject to the following conditions:                     *
+ *                                                                              *
+ * The above copyright notice and this permission notice shall be included in   *
+ * all copies or substantial portions of the Software.                          *
+ *                                                                              *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR   *
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,     *
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  *
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER       *
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,*
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN    *
+ * THE SOFTWARE.                                                                *
+ *                                                                              *
+ *******************************************************************************/ -->
+ 
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+  <j:set var="lang" value="${instance.language}"/>
+  <j:if test="${lang == null}">
+      <j:set var="lang" value="${descriptor.language}"/>
+  </j:if>    
+  
+  
+  
+  <f:entry title="Database Name" field="dbName" help="/plugin/UnderstandJenkins/dbname.html">
+    <f:textbox />
+  </f:entry>
+  
+  
+  <f:entry title="Path to source files" field="pathFiles" help="/plugin/UnderstandJenkins/pathSrc.html">
+      <f:textbox/>
+  </f:entry>
+  
+  
+  <f:entry title="Path to Configuration" field="pathCodeCheckIni" help="/plugin/UnderstandJenkins/pathIni.html">
+      <f:textbox/>
+  </f:entry>
+  
+  <f:rowSet name="lang" >
+      <f:entry title="Languages of the project" help="/plugin/UnderstandJenkins/language.html">
+          <f:checkbox name="java" title="Java" checked="${lang.java}"/>
+          <f:checkbox name="cpp" title="C/C++" checked="${lang.cpp}"/>
+          <f:checkbox name="csharp" title="C# " checked="${lang.csharp}"/>
+          <f:checkbox name="fortran" title="Fortran " checked="${lang.fortran}"/>
+          <f:checkbox name="ada" title="Ada " checked="${lang.ada}"/>
+          <f:checkbox name="jovial" title="Jovial " checked="${lang.jovial}"/>
+          <f:checkbox name="cobol" title="Cobol " checked="${lang.cobol}"/>
+          <f:checkbox name="vhdn" title="VHDN " checked="${lang.vhdn}"/>
+          <f:checkbox name="web" title="WEB " checked="${lang.web}"/>
+          <f:checkbox name="python" title="Python " checked="${lang.python}"/>
+          <f:checkbox name="pascal" title="Pascal " checked="${lang.pascal}"/>
+          <f:checkbox name="plm" title="PL/M " checked="${lang.plm}"/>
+      </f:entry>
+  </f:rowSet>
+   <f:entry title="Force Database Creation" help="/plugin/UnderstandJenkins/creation.html">
+        <f:checkbox name="forceCreation" title="Force Creation" field="forceCreation"/>
+   </f:entry>
+  <f:entry title="Create Understand report" help="/plugin/UnderstandJenkins/report.html">
+        <f:checkbox name="codeCheck" title="CodeCheck" field="codeCheck"/>
+        <f:checkbox name="metrics" title="Metrics" field="metrics"/>
+        <f:checkbox name="report" title="Report " field="report"/>
+  </f:entry>
+  
+</j:jelly>
